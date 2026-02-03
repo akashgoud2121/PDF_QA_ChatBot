@@ -2,39 +2,164 @@ import streamlit as st
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
-from langchain.chains import load_qa_chain
-from langchain.prompts import PromptTemplate
+from langchain_community.chains import load_qa_chain
+from langchain_core.prompts import PromptTemplate
 from PyPDF2 import PdfReader
 import os
-# Set the Google API Key in the environment
-st.set_page_config(page_title="Interactive QA Bot for Financial Data ", page_icon="📄", layout="wide")
-st.markdown(
+
+# Page config
+st.set_page_config(
+    page_title="Interactive PDF QA Bot",
+    page_icon="📄",
+    layout="wide"
+)
+
+# Styling
+st.markdown("""
+<style>
+body {
+    background-color: #eef2f3;
+    color: #2c3e50;
+}
+.stButton>button {
+    background-color: #3498db;
+    color: white;
+    font-size: 16px;
+    padding: 8px 16px;
+    border-radius: 6px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Header
+st.title("📄 PDF Question Answering App (RAG + Gemini)")
+st.write("Upload a PDF, ask questions, get accurate AI-powered answers.")
+
+# API Key
+api_key = st.text_input("Enter Google API Key", type="password")
+
+if api_key:
+    os.environ["GOOGLE_API_KEY"] = api_key
+
+# Sidebar
+st.sidebar.header("📂 Upload PDF")
+uploaded_file = st.sidebar.file_uploader("Choose a PDF", type=["pdf"])
+
+st.sidebar.header("❓ Ask Question")
+user_question = st.sidebar.text_area("Enter your question")
+
+# -------- FUNCTIONS -------- #
+
+@st.cache_data
+def extract_text_from_pdf(pdf):
+    reader = PdfReader(pdf)
+    text = ""
+    for page in reader.pages:
+        text += page.extract_text()
+    return text
+
+
+@st.cache_data
+def split_text(text):
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=1000,
+        chunk_overlap=200
+    )
+    return splitter.split_text(text)
+
+
+@st.cache_resource
+def create_vector_store(chunks):
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+    db = FAISS.from_texts(chunks, embeddings)
+    db.save_local("faiss_index")
+    return db
+
+
+def get_chain():
+    prompt_template = """
+    Answer using only the provided context.
+    If answer is not present, say "Answer not available in the document."
+
+    Context:
+    {context}
+
+    Question:
+    {question}
+
+    Answer:
     """
-    <style>
-    body {
-        background-color: #eef2f3;
-        color: #2c3e50;
-        font-family: Arial, sans-serif;
-    }
-    .stButton>button {
-        background-color: #3498db;
-        color: white;
-        font-size: 16px;
-        padding: 8px 16px;
-        border: none;
-        border-radius: 6px;
-        transition: 0.3s;
-    }
-    .stButton>button:hover {
-        background-color: #2980b9;
-    }
-    .stFileUploader {
-        margin-bottom: 20px;
-    }
-    .stTextArea {
-        margin-top: 10px;
-    }
-    </style>
+
+    prompt = PromptTemplate(
+        template=prompt_template,
+        input_variables=["context", "question"]
+    )
+
+    model = ChatGoogleGenerativeAI(
+        model="gemini-pro",
+        temperature=0.3
+    )
+
+    return load_qa_chain(model, chain_type="stuff", prompt=prompt)
+
+# -------- MAIN LOGIC -------- #
+
+if uploaded_file and api_key and user_question:
+
+    with st.spinner("Processing PDF..."):
+
+        try:
+            # Extract text
+            raw_text = extract_text_from_pdf(uploaded_file)
+
+            # Split into chunks
+            chunks = split_text(raw_text)
+
+            # Create vector DB
+            create_vector_store(chunks)
+
+            # Load DB
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+            db = FAISS.load_local(
+                "faiss_index",
+                embeddings,
+                allow_dangerous_deserialization=True
+            )
+
+            # Search
+            docs = db.similarity_search(user_question, k=3)
+
+            # Get chain
+            chain = get_chain()
+
+            # Generate answer
+            response = chain(
+                {"input_documents": docs, "question": user_question},
+                return_only_outputs=True
+            )
+
+            # Display
+            st.success("Answer Generated!")
+            st.subheader("Question")
+            st.write(user_question)
+
+            st.subheader("Answer")
+            st.write(response["output_text"])
+
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+else:
+    if not api_key:
+        st.warning("Enter Google API Key")
+    if not uploaded_file:
+        st.warning("Upload a PDF")
+    if not user_question:
+        st.warning("Ask a question")
+
+# Footer
+st.markdown("---")
+st.write("🚀 Built by Akash Goud")    </style>
     """,
     unsafe_allow_html=True,
 )
@@ -160,6 +285,7 @@ st.markdown(
     """
 
 )
+
 
 
 
