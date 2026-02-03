@@ -1,5 +1,5 @@
 import streamlit as st
-from langchain.text_splitters import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -162,3 +162,4 @@ st.markdown(
     """
 
 )
+
