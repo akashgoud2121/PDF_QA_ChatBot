@@ -2,11 +2,10 @@ import streamlit as st
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
-from langchain.chains.question_answering import load_qa_chain
+from langchain.chains import load_qa_chain
 from langchain.prompts import PromptTemplate
 from PyPDF2 import PdfReader
 import os
-
 # Set the Google API Key in the environment
 st.set_page_config(page_title="Interactive QA Bot for Financial Data ", page_icon="📄", layout="wide")
 st.markdown(
@@ -161,5 +160,6 @@ st.markdown(
     """
 
 )
+
 
 
