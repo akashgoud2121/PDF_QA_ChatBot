@@ -337,7 +337,7 @@ def get_conversational_chain():
     """
     prompt_template = """
     Answer the question as detailed as possible from the provided context. Make sure to provide all the details. 
-    If the answer is not in the provided context, just say, "Answer is not available in the context." Don't provide a wrong answer.
+    If the answer is not in the provided context, just say, "Answer is not available in the context." Do not provide a wrong answer.
     
     Context:\n{context}\n
     Question:\n{question}\n
@@ -395,6 +395,7 @@ st.markdown(
     """
 
 )
+
 
 
 
