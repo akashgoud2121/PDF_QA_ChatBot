@@ -1,10 +1,11 @@
 streamlit
 PyPDF2
-langchain_community
+langchain-community
 langchain_google_genai
 faiss-cpu
 scikit-learn
 langchain-core
 langchain
+
 
 
