@@ -3,7 +3,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
 # Corrected import for standard LangChain chains
-from langchain.chains.question_answering import load_qa_chain
+# Source - https://stackoverflow.com/a/79818926
+# Posted by louis thomas
+# Retrieved 2026-02-04, License - CC BY-SA 4.0
+
+from langchain.chains.retrieval import create_retrieval_chain
+
 from langchain_core.prompts import PromptTemplate
 from PyPDF2 import PdfReader
 import os
@@ -128,3 +133,4 @@ else:
 st.markdown("---")
 st.write("🚀 Developed with Streamlit & LangChain")
         
+
