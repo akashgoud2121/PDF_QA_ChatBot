@@ -2,6 +2,7 @@ import streamlit as st
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_google_genai import GoogleGenerativeAIEmbeddings, ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
+# Corrected import for load_qa_chain
 from langchain.chains.question_answering import load_qa_chain
 from langchain_core.prompts import PromptTemplate
 from PyPDF2 import PdfReader
@@ -80,7 +81,6 @@ st.title("📄 PDF Question Answering App")
 st.write("Upload a PDF and ask questions using AI")
 
 api_key = st.text_input("Enter Google API Key", type="password")
-
 if api_key:
     os.environ["GOOGLE_API_KEY"] = api_key
 
@@ -89,12 +89,10 @@ user_question = st.text_area("Enter your question")
 if uploaded_file and api_key and user_question:
     with st.spinner("Processing PDF..."):
         try:
-            # Step 1: Extract and Process Text
             raw_text = extract_text(uploaded_file)
             chunks = split_text(raw_text)
-            
-            # Step 2: Build/Load Vector Store
             create_vector_db(chunks)
+            
             embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
             db = FAISS.load_local(
                 "faiss_index", 
@@ -102,7 +100,6 @@ if uploaded_file and api_key and user_question:
                 allow_dangerous_deserialization=True
             )
 
-            # Step 3: Retrieval and QA
             docs = db.similarity_search(user_question, k=3)
             chain = get_chain()
             response = chain(
@@ -110,7 +107,6 @@ if uploaded_file and api_key and user_question:
                 return_only_outputs=True
             )
 
-            # Step 4: Display Result
             st.success("Answer Generated!")
             st.subheader("Answer")
             st.write(response["output_text"])
